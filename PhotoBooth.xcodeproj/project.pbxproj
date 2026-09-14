@@ -6,8 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		9006D3B73058650100F08112 /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 9006D3B63058650000F08112 /* .gitignore */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		9006D3A830585DA000F08112 /* PhotoBooth.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PhotoBooth.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		9006D3B63058650000F08112 /* .gitignore */ = {isa = PBXFileReference; lastKnownFileType = text; path = .gitignore; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -32,6 +37,7 @@
 		9006D39F30585DA000F08112 = {
 			isa = PBXGroup;
 			children = (
+				9006D3B63058650000F08112 /* .gitignore */,
 				9006D3AA30585DA000F08112 /* PhotoBooth */,
 				9006D3A930585DA000F08112 /* Products */,
 			);
@@ -109,6 +115,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9006D3B73058650100F08112 /* .gitignore in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
