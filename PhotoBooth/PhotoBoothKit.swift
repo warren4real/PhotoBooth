@@ -46,7 +46,13 @@ enum PhotoFilter: String, CaseIterable, Identifiable, Hashable {
 }
 
 enum PhotoStripComposer {
-    static func compose(images: [UIImage], filter: PhotoFilter) -> UIImage? {
+    static func compose(
+        images: [UIImage],
+        filter: PhotoFilter,
+        captionText: String = "PhotoBooth",
+        captionColor: UIColor = .black,
+        backgroundColor: UIColor = .white
+    ) -> UIImage? {
         guard !images.isEmpty else { return nil }
 
         let filtered = images.map { filter.apply(to: $0) }
@@ -62,7 +68,7 @@ enum PhotoStripComposer {
         let renderer = UIGraphicsImageRenderer(size: CGSize(width: stripWidth, height: totalHeight))
 
         return renderer.image { ctx in
-            UIColor.white.setFill()
+            backgroundColor.setFill()
             ctx.fill(CGRect(x: 0, y: 0, width: stripWidth, height: totalHeight))
 
             var y = padding
@@ -72,26 +78,25 @@ enum PhotoStripComposer {
                 y += photoHeight + padding
             }
 
-            let title = "PhotoBooth"
             let titleAttrs: [NSAttributedString.Key: Any] = [
                 .font: UIFont.boldSystemFont(ofSize: 26),
-                .foregroundColor: UIColor.black
+                .foregroundColor: captionColor
             ]
-            let titleSize = title.size(withAttributes: titleAttrs)
+            let titleSize = captionText.size(withAttributes: titleAttrs)
             let titleRect = CGRect(
                 x: (stripWidth - titleSize.width) / 2,
                 y: totalHeight - footerHeight + (footerHeight - titleSize.height) / 2 - 10,
                 width: titleSize.width,
                 height: titleSize.height
             )
-            title.draw(in: titleRect, withAttributes: titleAttrs)
+            captionText.draw(in: titleRect, withAttributes: titleAttrs)
 
             let dateFormatter = DateFormatter()
             dateFormatter.dateStyle = .medium
             let dateString = dateFormatter.string(from: Date())
             let dateAttrs: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: 14),
-                .foregroundColor: UIColor.darkGray
+                .foregroundColor: captionColor.withAlphaComponent(0.65)
             ]
             let dateSize = dateString.size(withAttributes: dateAttrs)
             let dateRect = CGRect(
