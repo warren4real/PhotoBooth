@@ -19,10 +19,47 @@ struct ContentView: View {
     @State private var selectedFilter: PhotoFilter = .none
     @State private var saveMessage: String?
     @State private var showThemePicker = false
+    @State private var captureTask: Task<Void, Never>?
+
+    @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private let shotsPerStrip = 4
 
     private var theme: HolidayTheme { themeManager.current }
+    private var isPad: Bool { horizontalSizeClass == .regular }
+    private var metrics: Metrics { Metrics(isPad: isPad) }
+
+    private struct Metrics {
+        let isPad: Bool
+        var horizontalPadding: CGFloat { isPad ? 56 : 20 }
+        var badgeSize: CGFloat { isPad ? 48 : 36 }
+        var badgeFont: CGFloat { isPad ? 16 : 12 }
+        var kickerFont: CGFloat { isPad ? 13 : 10 }
+        var titleFont: CGFloat { isPad ? 25 : 18 }
+        var framesLabelFont: CGFloat { isPad ? 12 : 9 }
+        var framesValueFont: CGFloat { isPad ? 17 : 13 }
+        var iconFont: CGFloat { isPad ? 22 : 16 }
+        var chipFont: CGFloat { isPad ? 13 : 10 }
+        var chipChevronFont: CGFloat { isPad ? 10 : 8 }
+        var chipPaddingH: CGFloat { isPad ? 16 : 12 }
+        var chipPaddingV: CGFloat { isPad ? 9 : 6 }
+        var cropMarkLength: CGFloat { isPad ? 30 : 16 }
+        var cropMarkWidth: CGFloat { isPad ? 3 : 2 }
+        var cropMarkInset: CGFloat { isPad ? 24 : 14 }
+        var countdownFont: CGFloat { isPad ? 180 : 96 }
+        var shotLabelFont: CGFloat { isPad ? 15 : 11 }
+        var shutterOuter: CGFloat { isPad ? 108 : 78 }
+        var shutterInner: CGFloat { isPad ? 82 : 58 }
+        var shutterStroke: CGFloat { isPad ? 4 : 3 }
+        var controlsSideInset: CGFloat { isPad ? 64 : 40 }
+        var resetIconFont: CGFloat { isPad ? 20 : 15 }
+        var resetLabelFont: CGFloat { isPad ? 11 : 9 }
+        var contactHeaderFont: CGFloat { isPad ? 13 : 10 }
+        var thumbWidth: CGFloat { isPad ? 128 : 84 }
+        var thumbHeight: CGFloat { isPad ? 164 : 108 }
+        var thumbLabelFont: CGFloat { isPad ? 12 : 9 }
+    }
 
     var body: some View {
         ZStack {
@@ -38,7 +75,24 @@ struct ContentView: View {
             }
         }
         .animation(.easeInOut(duration: 0.2), value: theme)
-        .onAppear { themeManager.refreshIfNeeded() }
+        .onAppear {
+            themeManager.refreshIfNeeded()
+            UIApplication.shared.isIdleTimerDisabled = true
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                captureTask?.cancel()
+                camera.stopSession()
+                UIApplication.shared.isIdleTimerDisabled = false
+            case .active:
+                camera.resumeSession()
+                themeManager.refreshIfNeeded()
+                UIApplication.shared.isIdleTimerDisabled = true
+            default:
+                break
+            }
+        }
         .sheet(isPresented: $showThemePicker) {
             ThemePickerView(themeManager: themeManager)
         }
@@ -86,20 +140,20 @@ struct ContentView: View {
         HStack(spacing: 12) {
             Circle()
                 .fill(theme.secondaryAccent)
-                .frame(width: 36, height: 36)
+                .frame(width: metrics.badgeSize, height: metrics.badgeSize)
                 .overlay(
                     Text("PB")
-                        .font(.system(size: 12, weight: .bold))
+                        .font(.system(size: metrics.badgeFont, weight: .bold))
                         .foregroundStyle(.white)
                 )
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("POCKET STUDIO")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: metrics.kickerFont, weight: .bold))
                     .tracking(2)
                     .foregroundStyle(theme.ink.opacity(0.55))
                 Text("PhotoBooth")
-                    .font(.system(size: 18, weight: .bold, design: .serif))
+                    .font(.system(size: metrics.titleFont, weight: .bold, design: .serif))
                     .foregroundStyle(theme.ink)
             }
 
@@ -107,10 +161,10 @@ struct ContentView: View {
 
             VStack(alignment: .trailing, spacing: 1) {
                 Text("FRAMES")
-                    .font(.system(size: 9, weight: .bold))
+                    .font(.system(size: metrics.framesLabelFont, weight: .bold))
                     .foregroundStyle(theme.ink.opacity(0.5))
                 Text("\(shots.count)/0\(shotsPerStrip)")
-                    .font(.system(size: 13, weight: .bold, design: .serif))
+                    .font(.system(size: metrics.framesValueFont, weight: .bold, design: .serif))
                     .foregroundStyle(theme.ink)
             }
 
@@ -118,12 +172,12 @@ struct ContentView: View {
                 camera.switchCamera()
             } label: {
                 Image(systemName: "arrow.triangle.2.circlepath.camera")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.system(size: metrics.iconFont, weight: .semibold))
                     .foregroundStyle(theme.ink)
             }
             .disabled(isRunningSequence)
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, metrics.horizontalPadding)
         .padding(.top, 12)
         .padding(.bottom, 4)
     }
@@ -136,20 +190,20 @@ struct ContentView: View {
                 HStack(spacing: 6) {
                     Text(theme.emoji)
                     Text(theme.name.uppercased())
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: metrics.chipFont, weight: .bold))
                         .tracking(1)
                     Image(systemName: "chevron.down")
-                        .font(.system(size: 8, weight: .bold))
+                        .font(.system(size: metrics.chipChevronFont, weight: .bold))
                 }
                 .foregroundStyle(.white)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
+                .padding(.horizontal, metrics.chipPaddingH)
+                .padding(.vertical, metrics.chipPaddingV)
                 .background(theme.accent)
                 .clipShape(Capsule())
             }
             Spacer()
         }
-        .padding(.horizontal, 20)
+        .padding(.horizontal, metrics.horizontalPadding)
         .padding(.top, 8)
     }
 
@@ -171,13 +225,13 @@ struct ContentView: View {
 
             if let countdown {
                 Text("\(countdown)")
-                    .font(.system(size: 96, weight: .bold, design: .serif))
+                    .font(.system(size: metrics.countdownFont, weight: .bold, design: .serif))
                     .foregroundStyle(theme.paper)
                     .transition(.scale.combined(with: .opacity))
             }
         }
         .aspectRatio(3.0 / 4.0, contentMode: .fit)
-        .padding(.horizontal, 20)
+        .padding(.horizontal, metrics.horizontalPadding)
         .shadow(color: .black.opacity(0.18), radius: 18, x: 8, y: 10)
         .animation(.easeInOut(duration: 0.2), value: countdown)
     }
@@ -215,18 +269,18 @@ struct ContentView: View {
                 cropMark(rotation: 180)
             }
         }
-        .padding(14)
+        .padding(metrics.cropMarkInset)
         .allowsHitTesting(false)
     }
 
     private func cropMark(rotation: Double) -> some View {
         Path { path in
-            path.move(to: CGPoint(x: 0, y: 16))
+            path.move(to: CGPoint(x: 0, y: metrics.cropMarkLength))
             path.addLine(to: CGPoint(x: 0, y: 0))
-            path.addLine(to: CGPoint(x: 16, y: 0))
+            path.addLine(to: CGPoint(x: metrics.cropMarkLength, y: 0))
         }
-        .stroke(theme.paper.opacity(0.7), lineWidth: 2)
-        .frame(width: 16, height: 16)
+        .stroke(theme.paper.opacity(0.7), lineWidth: metrics.cropMarkWidth)
+        .frame(width: metrics.cropMarkLength, height: metrics.cropMarkLength)
         .rotationEffect(.degrees(rotation))
     }
 
@@ -236,22 +290,22 @@ struct ContentView: View {
         VStack(spacing: 10) {
             if isRunningSequence {
                 Text("SHOT \(min(shots.count + 1, shotsPerStrip)) OF \(shotsPerStrip)")
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: metrics.shotLabelFont, weight: .bold))
                     .tracking(1.5)
                     .foregroundStyle(theme.ink.opacity(0.6))
             }
 
             ZStack {
                 Button {
-                    Task { await runPhotoBoothSequence() }
+                    captureTask = Task { await runPhotoBoothSequence() }
                 } label: {
                     ZStack {
                         Circle()
-                            .stroke(theme.ink, lineWidth: 3)
-                            .frame(width: 78, height: 78)
+                            .stroke(theme.ink, lineWidth: metrics.shutterStroke)
+                            .frame(width: metrics.shutterOuter, height: metrics.shutterOuter)
                         Circle()
                             .fill(isRunningSequence ? theme.ink.opacity(0.25) : theme.accent)
-                            .frame(width: 58, height: 58)
+                            .frame(width: metrics.shutterInner, height: metrics.shutterInner)
                     }
                 }
                 .disabled(isRunningSequence || !camera.permissionGranted)
@@ -262,9 +316,9 @@ struct ContentView: View {
                     } label: {
                         VStack(spacing: 3) {
                             Image(systemName: "arrow.counterclockwise")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(.system(size: metrics.resetIconFont, weight: .semibold))
                             Text("RESET")
-                                .font(.system(size: 9, weight: .bold))
+                                .font(.system(size: metrics.resetLabelFont, weight: .bold))
                                 .tracking(1)
                         }
                     }
@@ -273,7 +327,7 @@ struct ContentView: View {
 
                     Spacer()
                 }
-                .padding(.horizontal, 40)
+                .padding(.horizontal, metrics.controlsSideInset)
             }
         }
         .padding(.vertical, 18)
@@ -285,15 +339,15 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text("CONTACT SHEET")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: metrics.contactHeaderFont, weight: .bold))
                     .tracking(2)
                     .foregroundStyle(theme.ink.opacity(0.5))
                 Spacer()
                 Text("SESSION SP-\(sessionCode)")
-                    .font(.system(size: 10, weight: .bold))
+                    .font(.system(size: metrics.contactHeaderFont, weight: .bold))
                     .foregroundStyle(theme.ink.opacity(0.4))
             }
-            .padding(.horizontal, 20)
+            .padding(.horizontal, metrics.horizontalPadding)
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
@@ -301,11 +355,11 @@ struct ContentView: View {
                         Image(uiImage: shot)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(width: 84, height: 108)
+                            .frame(width: metrics.thumbWidth, height: metrics.thumbHeight)
                             .clipped()
                             .overlay(
                                 Text("0\(index + 1)")
-                                    .font(.system(size: 9, weight: .bold))
+                                    .font(.system(size: metrics.thumbLabelFont, weight: .bold))
                                     .padding(4)
                                     .background(theme.paper)
                                     .foregroundStyle(theme.ink),
@@ -318,15 +372,15 @@ struct ContentView: View {
                         let index = shots.count + offset
                         RoundedRectangle(cornerRadius: 2)
                             .strokeBorder(theme.ink.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [4]))
-                            .frame(width: 84, height: 108)
+                            .frame(width: metrics.thumbWidth, height: metrics.thumbHeight)
                             .overlay(
                                 Text("0\(index + 1)")
-                                    .font(.system(size: 9, weight: .bold))
+                                    .font(.system(size: metrics.thumbLabelFont, weight: .bold))
                                     .foregroundStyle(theme.ink.opacity(0.3))
                             )
                     }
                 }
-                .padding(.horizontal, 20)
+                .padding(.horizontal, metrics.horizontalPadding)
             }
         }
         .padding(.bottom, 24)
@@ -348,20 +402,32 @@ struct ContentView: View {
 
         for _ in 0..<shotsPerStrip {
             for tick in stride(from: 3, through: 1, by: -1) {
+                if Task.isCancelled { return abandonSequence() }
                 countdown = tick
                 try? await Task.sleep(nanoseconds: 800_000_000)
             }
+            if Task.isCancelled { return abandonSequence() }
             countdown = nil
 
             if let image = await camera.capturePhoto() {
                 shots.append(image)
             }
 
+            if Task.isCancelled { return abandonSequence() }
             try? await Task.sleep(nanoseconds: 400_000_000)
         }
 
         isRunningSequence = false
+        captureTask = nil
         recomposeStrip()
+    }
+
+    /// Resets UI state cleanly when a sequence is interrupted (e.g. the app was backgrounded).
+    private func abandonSequence() {
+        isRunningSequence = false
+        countdown = nil
+        shots = []
+        captureTask = nil
     }
 
     private func recomposeStrip() {
@@ -464,20 +530,24 @@ struct PhotoStripReviewView: View {
     let onRetake: () -> Void
     let onSave: () -> Void
 
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    private var isPad: Bool { horizontalSizeClass == .regular }
+
     var body: some View {
         ZStack {
             theme.paper.ignoresSafeArea()
 
-            VStack(spacing: 18) {
+            VStack(spacing: isPad ? 26 : 18) {
                 Text("\(theme.emoji)  \(theme.stripCaption)")
-                    .font(.system(size: 22, weight: .bold, design: .serif))
+                    .font(.system(size: isPad ? 30 : 22, weight: .bold, design: .serif))
                     .foregroundStyle(theme.ink)
-                    .padding(.top, 24)
+                    .padding(.top, isPad ? 32 : 24)
 
                 ScrollView {
                     Image(uiImage: strip)
                         .resizable()
                         .scaledToFit()
+                        .frame(maxWidth: isPad ? 420 : .infinity)
                         .padding(.horizontal, 24)
                         .shadow(color: .black.opacity(0.15), radius: 14, x: 6, y: 8)
                 }
@@ -488,6 +558,7 @@ struct PhotoStripReviewView: View {
                     }
                 }
                 .pickerStyle(.segmented)
+                .frame(maxWidth: isPad ? 480 : .infinity)
                 .padding(.horizontal, 24)
                 .onChange(of: selectedFilter) { _, _ in
                     onFilterChange()
@@ -496,18 +567,18 @@ struct PhotoStripReviewView: View {
                 HStack(spacing: 14) {
                     Button(action: onRetake) {
                         Text("Retake")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.system(size: isPad ? 16 : 14, weight: .bold))
                             .foregroundStyle(theme.ink)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, isPad ? 14 : 12)
                             .frame(maxWidth: .infinity)
                             .overlay(RoundedRectangle(cornerRadius: 2).stroke(theme.ink.opacity(0.4), lineWidth: 1))
                     }
 
                     Button(action: onSave) {
                         Text("Save to Photos")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.system(size: isPad ? 16 : 14, weight: .bold))
                             .foregroundStyle(.white)
-                            .padding(.vertical, 12)
+                            .padding(.vertical, isPad ? 14 : 12)
                             .frame(maxWidth: .infinity)
                             .background(theme.accent)
                     }
@@ -517,14 +588,15 @@ struct PhotoStripReviewView: View {
                         preview: SharePreview("PhotoBooth strip", image: Image(uiImage: strip))
                     ) {
                         Image(systemName: "square.and.arrow.up")
-                            .font(.system(size: 16, weight: .semibold))
+                            .font(.system(size: isPad ? 18 : 16, weight: .semibold))
                             .foregroundStyle(.white)
-                            .padding(12)
+                            .padding(isPad ? 14 : 12)
                             .background(theme.secondaryAccent)
                     }
                 }
+                .frame(maxWidth: isPad ? 480 : .infinity)
                 .padding(.horizontal, 24)
-                .padding(.bottom, 24)
+                .padding(.bottom, isPad ? 32 : 24)
             }
         }
     }
