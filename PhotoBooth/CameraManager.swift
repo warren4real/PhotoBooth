@@ -118,10 +118,23 @@ class CameraManager: NSObject, ObservableObject {
             self?.session.stopRunning()
         }
     }
+
+    /// Restarts a previously-stopped session, e.g. after the app returns from the background.
+    func resumeSession() {
+        sessionQueue.async { [weak self] in
+            guard let self else { return }
+            if !self.session.isRunning {
+                self.session.startRunning()
+            }
+            DispatchQueue.main.async {
+                self.isSessionRunning = self.session.isRunning
+            }
+        }
+    }
 }
 
 extension CameraManager: AVCapturePhotoCaptureDelegate {
-    func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+    nonisolated func photoOutput(_ output: AVCapturePhotoOutput, didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
         guard error == nil,
               let data = photo.fileDataRepresentation(),
               let image = UIImage(data: data) else {
