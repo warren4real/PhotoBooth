@@ -24,7 +24,14 @@ struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
-    private let shotsPerStrip = 4
+    private var shotsPerStrip: Int {
+        theme.id == HolidayTheme.everyday.id ? VintageTicketStrip.photoCount : 4
+    }
+    private var captureAspectRatio: CGFloat {
+        theme.id == HolidayTheme.everyday.id
+            ? VintageTicketStrip.photoAspectRatio
+            : PhotoStripComposer.photoAspectRatio
+    }
 
     private var theme: HolidayTheme { themeManager.current }
     private var isPad: Bool { horizontalSizeClass == .regular }
@@ -230,7 +237,7 @@ struct ContentView: View {
                     .transition(.scale.combined(with: .opacity))
             }
         }
-        .aspectRatio(PhotoStripComposer.photoAspectRatio, contentMode: .fit)
+        .aspectRatio(captureAspectRatio, contentMode: .fit)
         .padding(.horizontal, metrics.horizontalPadding)
         .shadow(color: .black.opacity(0.18), radius: 18, x: 8, y: 10)
         .animation(.easeInOut(duration: 0.2), value: countdown)
