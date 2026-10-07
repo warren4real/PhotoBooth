@@ -28,9 +28,13 @@ struct ContentView: View {
         theme.id == HolidayTheme.everyday.id ? VintageTicketStrip.photoCount : 4
     }
     private var captureAspectRatio: CGFloat {
-        theme.id == HolidayTheme.everyday.id
-            ? VintageTicketStrip.photoAspectRatio
-            : PhotoStripComposer.photoAspectRatio
+        if theme.id == HolidayTheme.everyday.id {
+            return VintageTicketStrip.photoAspectRatio
+        }
+        if theme.id == HolidayTheme.christmasSeason.id {
+            return ChristmasSeasonStrip.photoAspectRatio
+        }
+        return PhotoStripComposer.photoAspectRatio
     }
 
     private var theme: HolidayTheme { themeManager.current }
@@ -440,6 +444,10 @@ struct ContentView: View {
     private func recomposeStrip() {
         if theme.id == HolidayTheme.everyday.id {
             finalStrip = VintageTicketStrip.compose(images: shots, filter: selectedFilter)
+            return
+        }
+        if theme.id == HolidayTheme.christmasSeason.id {
+            finalStrip = ChristmasSeasonStrip.compose(images: shots, filter: selectedFilter)
             return
         }
         finalStrip = PhotoStripComposer.compose(
