@@ -191,7 +191,7 @@ enum PhotoStripComposer {
         }
     }
 
-    private static func draw(
+    static func draw(
         _ image: UIImage,
         aspectFillIn rect: CGRect,
         context: CGContext

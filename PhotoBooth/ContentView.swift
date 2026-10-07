@@ -431,6 +431,10 @@ struct ContentView: View {
     }
 
     private func recomposeStrip() {
+        if theme.id == HolidayTheme.everyday.id {
+            finalStrip = VintageTicketStrip.compose(images: shots, filter: selectedFilter)
+            return
+        }
         finalStrip = PhotoStripComposer.compose(
             images: shots,
             filter: selectedFilter,
