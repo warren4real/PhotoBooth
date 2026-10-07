@@ -16,6 +16,7 @@ class CameraManager: NSObject, ObservableObject {
     private let photoOutput = AVCapturePhotoOutput()
     private let sessionQueue = DispatchQueue(label: "com.photobooth.sessionQueue")
     private(set) var currentCameraPosition: AVCaptureDevice.Position = .front
+    private var isRequestingPermission = false
     private var captureCompletion: ((UIImage?) -> Void)?
 
     override init() {
@@ -27,18 +28,21 @@ class CameraManager: NSObject, ObservableObject {
         switch AVCaptureDevice.authorizationStatus(for: .video) {
         case .authorized:
             permissionGranted = true
+            errorMessage = nil
             configureSession()
         case .notDetermined:
-            AVCaptureDevice.requestAccess(for: .video) { [weak self] granted in
+            guard !isRequestingPermission else { return }
+            isRequestingPermission = true
+            AVCaptureDevice.requestAccess(for: .video) { [weak self] _ in
                 DispatchQueue.main.async {
-                    self?.permissionGranted = granted
-                    if granted {
-                        self?.configureSession()
-                    }
+                    guard let self else { return }
+                    self.isRequestingPermission = false
+                    self.checkPermissions()
                 }
             }
         default:
             permissionGranted = false
+            stopSession()
             errorMessage = "Camera access is disabled. Enable it in Settings to use PhotoBooth."
         }
     }
@@ -115,22 +119,19 @@ class CameraManager: NSObject, ObservableObject {
 
     func stopSession() {
         sessionQueue.async { [weak self] in
-            self?.session.stopRunning()
+            guard let self else { return }
+            self.session.stopRunning()
+            DispatchQueue.main.async {
+                self.isSessionRunning = false
+            }
         }
     }
 
-    /// Restarts a previously-stopped session, e.g. after the app returns from the background.
+    /// Rechecks access after Settings changes before configuring and restarting the camera.
     func resumeSession() {
-        sessionQueue.async { [weak self] in
-            guard let self else { return }
-            if !self.session.isRunning {
-                self.session.startRunning()
-            }
-            DispatchQueue.main.async {
-                self.isSessionRunning = self.session.isRunning
-            }
-        }
+        checkPermissions()
     }
+
 }
 
 extension CameraManager: AVCapturePhotoCaptureDelegate {

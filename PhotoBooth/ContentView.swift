@@ -230,7 +230,7 @@ struct ContentView: View {
                     .transition(.scale.combined(with: .opacity))
             }
         }
-        .aspectRatio(3.0 / 4.0, contentMode: .fit)
+        .aspectRatio(PhotoStripComposer.photoAspectRatio, contentMode: .fit)
         .padding(.horizontal, metrics.horizontalPadding)
         .shadow(color: .black.opacity(0.18), radius: 18, x: 8, y: 10)
         .animation(.easeInOut(duration: 0.2), value: countdown)

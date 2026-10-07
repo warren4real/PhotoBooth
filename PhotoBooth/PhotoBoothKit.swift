@@ -65,6 +65,11 @@ enum PhotoFilter: String, CaseIterable, Identifiable, Hashable {
 
 enum PhotoStripComposer {
 
+    static let stripWidth: CGFloat = 640
+    static let padding: CGFloat = 24
+    static let photoHeight: CGFloat = 420
+    static var photoAspectRatio: CGFloat { (stripWidth - padding * 2) / photoHeight }
+
     static func compose(
         images: [UIImage],
         filter: PhotoFilter,
@@ -81,9 +86,6 @@ enum PhotoStripComposer {
             filter.apply(to: $0)
         }
 
-        let stripWidth: CGFloat = 640
-        let padding: CGFloat = 24
-        let photoHeight: CGFloat = 420
         let footerHeight: CGFloat = 100
 
         let totalHeight =
