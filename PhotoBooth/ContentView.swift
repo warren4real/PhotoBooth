@@ -53,13 +53,10 @@ struct ContentView: View {
     private struct Metrics {
         let isPad: Bool
         var horizontalPadding: CGFloat { isPad ? 56 : 20 }
-        var badgeSize: CGFloat { isPad ? 48 : 36 }
-        var badgeFont: CGFloat { isPad ? 16 : 12 }
         var kickerFont: CGFloat { isPad ? 13 : 10 }
-        var titleFont: CGFloat { isPad ? 25 : 18 }
+        var titleFont: CGFloat { isPad ? 32 : 26 }
         var framesLabelFont: CGFloat { isPad ? 12 : 9 }
         var framesValueFont: CGFloat { isPad ? 17 : 13 }
-        var iconFont: CGFloat { isPad ? 22 : 16 }
         var chipFont: CGFloat { isPad ? 13 : 10 }
         var chipChevronFont: CGFloat { isPad ? 10 : 8 }
         var chipPaddingH: CGFloat { isPad ? 16 : 12 }
@@ -76,8 +73,6 @@ struct ContentView: View {
         var resetIconFont: CGFloat { isPad ? 20 : 15 }
         var resetLabelFont: CGFloat { isPad ? 11 : 9 }
         var contactHeaderFont: CGFloat { isPad ? 13 : 10 }
-        var thumbWidth: CGFloat { isPad ? 128 : 84 }
-        var thumbHeight: CGFloat { isPad ? 164 : 108 }
         var thumbLabelFont: CGFloat { isPad ? 12 : 9 }
     }
 
@@ -85,13 +80,23 @@ struct ContentView: View {
         ZStack {
             theme.paper.ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                header
-                themeChip
-                Spacer(minLength: 8)
-                cameraStage
-                controls
-                contactSheet
+            GeometryReader { geometry in
+                ScrollView(.vertical, showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        header
+                        themeChip
+                        cameraStage
+                            .padding(.top, isPad ? 28 : 24)
+                        Spacer(minLength: 12)
+                        controls
+                        Spacer(minLength: 12)
+                        contactSheet
+                        captureHint
+                    }
+                    .frame(maxWidth: 680)
+                    .frame(minHeight: geometry.size.height, alignment: .top)
+                    .frame(maxWidth: .infinity)
+                }
             }
         }
         .animation(.easeInOut(duration: 0.2), value: theme)
@@ -158,44 +163,40 @@ struct ContentView: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            Circle()
-                .fill(theme.secondaryAccent)
-                .frame(width: metrics.badgeSize, height: metrics.badgeSize)
-                .overlay(
-                    Text("PB")
-                        .font(.system(size: metrics.badgeFont, weight: .bold))
-                        .foregroundStyle(.white)
-                )
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text("POCKET STUDIO")
-                    .font(.system(size: metrics.kickerFont, weight: .bold))
-                    .tracking(2)
-                    .foregroundStyle(theme.ink.opacity(0.55))
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 5) {
+                    Image(systemName: "camera.aperture")
+                        .font(.system(size: metrics.kickerFont, weight: .medium))
+                        .foregroundStyle(theme.ink.opacity(0.65))
+                    Text("POCKET STUDIO")
+                        .font(.system(size: metrics.kickerFont, weight: .medium))
+                        .tracking(1.8)
+                        .foregroundStyle(theme.ink.opacity(0.55))
+                }
                 Text("PhotoBooth")
-                    .font(.system(size: metrics.titleFont, weight: .bold, design: .serif))
+                    .font(.system(size: metrics.titleFont, weight: .semibold, design: .serif))
+                    .tracking(-0.8)
                     .foregroundStyle(theme.ink)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
             }
 
             Spacer()
 
-            VStack(alignment: .trailing, spacing: 1) {
+            VStack(alignment: .trailing, spacing: 4) {
                 Text("FRAMES")
                     .font(.system(size: metrics.framesLabelFont, weight: .bold))
                     .foregroundStyle(theme.ink.opacity(0.5))
-                Text("\(shots.count)/0\(shotsPerStrip)")
+                Text(String(format: "%02d / %02d", shots.count, shotsPerStrip))
                     .font(.system(size: metrics.framesValueFont, weight: .bold, design: .serif))
                     .foregroundStyle(theme.ink)
             }
-
-            Button {
-                camera.switchCamera()
-            } label: {
-                Image(systemName: "arrow.triangle.2.circlepath.camera")
-                    .font(.system(size: metrics.iconFont, weight: .semibold))
-                    .foregroundStyle(theme.ink)
+            .padding(.leading, 14)
+            .overlay(alignment: .leading) {
+                Rectangle()
+                    .fill(theme.ink.opacity(0.15))
+                    .frame(width: 1)
             }
-            .disabled(isRunningSequence)
         }
         .padding(.horizontal, metrics.horizontalPadding)
         .padding(.top, 12)
@@ -209,34 +210,34 @@ struct ContentView: View {
             } label: {
                 HStack(spacing: 6) {
                     Text(theme.emoji)
-                    Text(theme.name.uppercased())
-                        .font(.system(size: metrics.chipFont, weight: .bold))
-                        .tracking(1)
+                    Text(theme.name)
+                        .font(.system(size: metrics.chipFont + 2, weight: .medium))
                     Image(systemName: "chevron.down")
                         .font(.system(size: metrics.chipChevronFont, weight: .bold))
                 }
-                .foregroundStyle(.white)
+                .foregroundStyle(theme.ink)
                 .padding(.horizontal, metrics.chipPaddingH)
-                .padding(.vertical, metrics.chipPaddingV)
-                .background(theme.accent)
+                .padding(.vertical, metrics.chipPaddingV + 3)
+                .background(theme.ink.opacity(0.035))
                 .clipShape(Capsule())
+                .overlay(Capsule().stroke(theme.ink.opacity(0.18), lineWidth: 1))
             }
             Spacer()
         }
         .padding(.horizontal, metrics.horizontalPadding)
-        .padding(.top, 8)
+        .padding(.top, 14)
     }
 
     // MARK: - Camera stage
 
     private var cameraStage: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 4)
+            RoundedRectangle(cornerRadius: 16)
                 .fill(theme.ink)
 
             if camera.permissionGranted {
                 CameraPreview(session: camera.session)
-                    .clipShape(RoundedRectangle(cornerRadius: 4))
+                    .clipShape(RoundedRectangle(cornerRadius: 16))
             } else {
                 permissionContent
             }
@@ -252,7 +253,7 @@ struct ContentView: View {
         }
         .aspectRatio(captureAspectRatio, contentMode: .fit)
         .padding(.horizontal, metrics.horizontalPadding)
-        .shadow(color: .black.opacity(0.18), radius: 18, x: 8, y: 10)
+        .shadow(color: theme.ink.opacity(0.12), radius: 10, x: 0, y: 6)
         .animation(.easeInOut(duration: 0.2), value: countdown)
     }
 
@@ -328,6 +329,7 @@ struct ContentView: View {
                             .frame(width: metrics.shutterInner, height: metrics.shutterInner)
                     }
                 }
+                .accessibilityLabel("Take photo strip")
                 .disabled(isRunningSequence || !camera.permissionGranted)
 
                 HStack {
@@ -341,11 +343,28 @@ struct ContentView: View {
                                 .font(.system(size: metrics.resetLabelFont, weight: .bold))
                                 .tracking(1)
                         }
+                        .frame(minWidth: 44, minHeight: 44)
                     }
                     .foregroundStyle(theme.ink.opacity(0.55))
                     .disabled(isRunningSequence || shots.isEmpty)
 
                     Spacer()
+
+                    Button {
+                        camera.switchCamera()
+                    } label: {
+                        VStack(spacing: 3) {
+                            Image(systemName: "arrow.triangle.2.circlepath.camera")
+                                .font(.system(size: metrics.resetIconFont, weight: .semibold))
+                            Text("FLIP")
+                                .font(.system(size: metrics.resetLabelFont, weight: .bold))
+                                .tracking(1)
+                        }
+                        .frame(minWidth: 44, minHeight: 44)
+                    }
+                    .foregroundStyle(theme.ink.opacity(0.55))
+                    .accessibilityLabel("Switch camera")
+                    .disabled(isRunningSequence)
                 }
                 .padding(.horizontal, metrics.controlsSideInset)
             }
@@ -369,41 +388,59 @@ struct ContentView: View {
             }
             .padding(.horizontal, metrics.horizontalPadding)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(Array(shots.enumerated()), id: \.offset) { index, shot in
-                        Image(uiImage: shot)
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(width: metrics.thumbWidth, height: metrics.thumbHeight)
-                            .clipped()
-                            .overlay(
-                                Text("0\(index + 1)")
-                                    .font(.system(size: metrics.thumbLabelFont, weight: .bold))
-                                    .padding(4)
-                                    .background(theme.paper)
-                                    .foregroundStyle(theme.ink),
-                                alignment: .bottomLeading
-                            )
-                            .overlay(RoundedRectangle(cornerRadius: 2).stroke(theme.ink.opacity(0.5), lineWidth: 1))
-                    }
-
-                    ForEach(0..<max(0, shotsPerStrip - shots.count), id: \.self) { offset in
-                        let index = shots.count + offset
-                        RoundedRectangle(cornerRadius: 2)
-                            .strokeBorder(theme.ink.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [4]))
-                            .frame(width: metrics.thumbWidth, height: metrics.thumbHeight)
-                            .overlay(
-                                Text("0\(index + 1)")
-                                    .font(.system(size: metrics.thumbLabelFont, weight: .bold))
-                                    .foregroundStyle(theme.ink.opacity(0.3))
-                            )
-                    }
+            HStack(spacing: isPad ? 12 : 8) {
+                ForEach(Array(shots.enumerated()), id: \.offset) { index, shot in
+                    Color.clear
+                        .aspectRatio(0.78, contentMode: .fit)
+                        .overlay {
+                            Image(uiImage: shot)
+                                .resizable()
+                                .scaledToFill()
+                        }
+                        .clipped()
+                        .frame(maxWidth: .infinity)
+                        .overlay(
+                            Text("0\(index + 1)")
+                                .font(.system(size: metrics.thumbLabelFont, weight: .bold))
+                                .padding(4)
+                                .background(theme.paper)
+                                .foregroundStyle(theme.ink),
+                            alignment: .bottomLeading
+                        )
+                        .overlay(RoundedRectangle(cornerRadius: 2).stroke(theme.ink.opacity(0.5), lineWidth: 1))
                 }
-                .padding(.horizontal, metrics.horizontalPadding)
+
+                ForEach(0..<max(0, shotsPerStrip - shots.count), id: \.self) { offset in
+                    let index = shots.count + offset
+                    RoundedRectangle(cornerRadius: 2)
+                        .strokeBorder(theme.ink.opacity(0.2), style: StrokeStyle(lineWidth: 1, dash: [4]))
+                        .frame(maxWidth: .infinity)
+                        .aspectRatio(0.78, contentMode: .fit)
+                        .overlay(
+                            Text("0\(index + 1)")
+                                .font(.system(size: metrics.thumbLabelFont, weight: .bold))
+                                .foregroundStyle(theme.ink.opacity(0.3))
+                        )
+                }
             }
+            .padding(.horizontal, metrics.horizontalPadding)
         }
-        .padding(.bottom, 24)
+        .padding(.top, 8)
+        .padding(.bottom, 16)
+    }
+
+    private var captureHint: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "sparkles")
+                .foregroundStyle(theme.secondaryAccent)
+            Text(isRunningSequence ? "Hold your pose — the next frame is on its way." : "Tap the shutter. Strike \(shotsPerStrip) poses. Keep the memories.")
+                .font(.system(size: isPad ? 13 : 11, weight: .medium))
+                .foregroundStyle(theme.ink.opacity(0.5))
+                .multilineTextAlignment(.center)
+        }
+        .padding(.horizontal, metrics.horizontalPadding)
+        .padding(.bottom, 20)
+        .accessibilityElement(children: .combine)
     }
 
     private var sessionCode: String {
