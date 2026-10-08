@@ -1,0 +1,19 @@
+{
+  "argv": [
+    "/opt/homebrew/bin/sweetpad",
+    "bsp",
+    "serve",
+    "--project",
+    "/Users/warrenmalawae/Developer/PhotoBooth/PhotoBooth.xcodeproj"
+  ],
+  "bspVersion": "2.2.0",
+  "languages": [
+    "swift",
+    "objective-c",
+    "objective-cpp",
+    "c",
+    "cpp"
+  ],
+  "name": "sweetpad",
+  "version": "0.1.12"
+}

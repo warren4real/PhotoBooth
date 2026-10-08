@@ -34,6 +34,15 @@ struct ContentView: View {
         if theme.id == HolidayTheme.christmasSeason.id {
             return ChristmasSeasonStrip.photoAspectRatio
         }
+        if theme.id == HolidayTheme.christmasEve.id {
+            return ChristmasEveStrip.photoAspectRatio
+        }
+        if theme.id == HolidayTheme.independenceDay.id {
+            return IndependenceDayStrip.photoAspectRatio
+        }
+        if theme.id == HolidayTheme.chineseNewYear.id {
+            return ChineseNewYearStrip.photoAspectRatio
+        }
         return PhotoStripComposer.photoAspectRatio
     }
 
@@ -448,6 +457,18 @@ struct ContentView: View {
         }
         if theme.id == HolidayTheme.christmasSeason.id {
             finalStrip = ChristmasSeasonStrip.compose(images: shots, filter: selectedFilter)
+            return
+        }
+        if theme.id == HolidayTheme.christmasEve.id {
+            finalStrip = ChristmasEveStrip.compose(images: shots, filter: selectedFilter)
+            return
+        }
+        if theme.id == HolidayTheme.independenceDay.id {
+            finalStrip = IndependenceDayStrip.compose(images: shots, filter: selectedFilter)
+            return
+        }
+        if theme.id == HolidayTheme.chineseNewYear.id {
+            finalStrip = ChineseNewYearStrip.compose(images: shots, filter: selectedFilter)
             return
         }
         finalStrip = PhotoStripComposer.compose(
